@@ -1,0 +1,18 @@
+# Core FastAPI dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-dotenv==1.0.0
+
+# NASA GPM data processing
+xarray==2023.12.0
+netcdf4==1.6.5
+numpy==1.24.3
+pandas==2.0.3
+
+# HTTP requests for OPeNDAP
+requests==2.31.0
+aiohttp==3.9.1
+
+# Additional utilities
+python-multipart==0.0.6
