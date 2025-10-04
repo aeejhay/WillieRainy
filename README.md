@@ -24,27 +24,86 @@ This application provides historical rain probability data based on 22 years of 
 - **HTTP Client**: Axios
 - **Date Handling**: date-fns
 
-## Quick Start
+## 🚀 Quick Start for Team Members
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- npm or yarn
+- Python 3.11+ ([Download here](https://www.python.org/downloads/))
+- Node.js 18+ ([Download here](https://nodejs.org/))
+- Git ([Download here](https://git-scm.com/downloads))
 
-### Option 1: Local Development
+### 🎯 Super Easy Setup (Recommended)
 
-1. **Clone and setup the project:**
+**For new team members, just run this one command:**
+
 ```bash
-git clone <repository-url>
-cd willierainy-niceeyes
+git clone https://github.com/aeejhay/WillieRainy.git
+cd WillieRainy
+python setup.py
+```
+
+That's it! The setup script will:
+- ✅ Check your Python and Node.js versions
+- ✅ Create virtual environment
+- ✅ Install all dependencies
+- ✅ Set up environment files
+- ✅ Create convenient startup scripts
+
+### 🎮 Running the Application
+
+After setup, you have 3 easy options:
+
+#### Option 1: Run Everything (Easiest)
+```bash
+# Double-click this file or run:
+start_app.bat
+```
+This starts both backend and frontend automatically!
+
+#### Option 2: Run Separately
+```bash
+# Backend only
+start_backend.bat
+
+# Frontend only (in another terminal)
+start_frontend.bat
+```
+
+#### Option 3: Manual Commands
+```bash
+# Terminal 1 - Backend
+cd backend
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Mac/Linux
+uvicorn app.main:app --reload
+
+# Terminal 2 - Frontend
+cd frontend
+npm run dev
+```
+
+### 🌐 Access Points
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+
+### 🔧 Manual Setup (If needed)
+
+If the automated setup doesn't work, follow these steps:
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/aeejhay/WillieRainy.git
+cd WillieRainy
 ```
 
 2. **Backend setup:**
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+copy env.example .env  # Windows
+# cp env.example .env  # Mac/Linux
 ```
 
 3. **Frontend setup:**
@@ -57,17 +116,13 @@ npm install
 ```bash
 # Terminal 1 - Backend
 cd backend
+venv\Scripts\activate
 uvicorn app.main:app --reload
 
 # Terminal 2 - Frontend
 cd frontend
 npm run dev
 ```
-
-5. **Access the application:**
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
 
 ### Option 2: Docker Development
 
