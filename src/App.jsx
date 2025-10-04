@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, Sprout, Calendar, TrendingUp, Cloud, Droplets, Wind, X, Thermometer, Activity, Zap, AlertTriangle, BarChart3, Leaf, MoreHorizontal } from "lucide-react";
 import GlassSurface from './components/GlassSurface';
 import MapView from './components/LandingPage/MapView';
+import Crosshair from './components/Crosshair';
+import TiltedCard from './components/TiltedCard';
 
 const dashboardItems = [
   { id: 1, title: "Weather", icon: Cloud, content: "Detailed weather information and forecasts for your selected area.", color: "bg-gray-700", span: "col-span-1 row-span-1" },
@@ -21,6 +23,7 @@ const dashboardItems = [
 
 
 export default function App() {
+  const mapContainerRef = useRef(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
   const [dimensions, setDimensions] = useState({ x: 0, y: 0, width: 0, height: 0 });
@@ -121,10 +124,6 @@ export default function App() {
     });
     
     setShowDashboard(true);
-    // Smooth scroll to dashboard
-    setTimeout(() => {
-      window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
-    }, 100);
   };
 
   const handleCloseDashboard = () => {
@@ -144,7 +143,7 @@ export default function App() {
           className="min-h-screen grid grid-cols-3"
         >
             {/* Left Side - Interactive OpenStreetMap */}
-            <div className="col-span-2 relative">
+            <div ref={mapContainerRef} className="col-span-2 relative">
               <MapView
                 latitude={latitude}
                 longitude={longitude}
@@ -154,6 +153,8 @@ export default function App() {
                   setLocationMethod('map');
                 }}
               />
+              {/* Full-page crosshair visible when hovering over the map area */}
+              <Crosshair containerRef={mapContainerRef} color="#00ADB5" opacity={0.6} thickness={3} />
             </div>
 
             {/* Right Side - Location Selector and Form */}
@@ -469,14 +470,30 @@ export default function App() {
                         stiffness: 150,
                         damping: 15
                       }}
-                      className={`${item.span} ${item.color} p-4 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg hover:shadow-xl ${
-                        activeItem?.id === item.id ? "opacity-0" : ""
-                      }`}
-                      onClick={(e) => handleClick(item, e)}
+                      className={`${item.span}`}
                     >
-                      <Icon className="w-7 h-7 text-white mb-2" />
-                      <h2 className="font-semibold text-base text-white tracking-tight">{item.title}</h2>
-                      <p className="text-white/50 mt-1 text-xs font-medium">Tap to view</p>
+                      <TiltedCard
+                        containerHeight="100%"
+                        containerWidth="100%"
+                        rotateAmplitude={12}
+                        scaleOnHover={1.05}
+                        showTooltip={false}
+                        displayOverlayContent={true}
+                        overlayContent={
+                          <div className="flex items-center gap-2">
+                            <Icon className="w-6 h-6 text-white" />
+                            <h2 className="font-semibold text-base text-white tracking-tight">{item.title}</h2>
+                          </div>
+                        }
+                        className={`cursor-pointer`}
+                        cardClassName={`${item.color} transition-shadow duration-200 shadow-lg hover:shadow-xl`}
+                        onClick={(e) => handleClick(item, e)}
+                      >
+                        {/* Fallback content if no image provided */}
+                        <div className="absolute inset-0 p-4">
+                          <p className="text-white/60 text-xs font-medium">Tap to view</p>
+                        </div>
+                      </TiltedCard>
                     </motion.div>
                   );
                 })}
