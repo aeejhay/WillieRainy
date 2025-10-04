@@ -63,7 +63,7 @@ frontend/dist/
 frontend/build/
 
 # Vite cache
-.vite/
+
 
 # Logs
 logs

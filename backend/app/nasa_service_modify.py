@@ -111,7 +111,7 @@ class NASAGPMService:
         years_with_data = 0
         
         # Fetch data for the same month across multiple years
-        for year in range(1998, 2026):  # 1998 to 2025
+        for year in range(2001, 2026):  # 1998 to 2025
             for month in range(1, 13):
                 try:
                     # Construct filename for the specific year and month
