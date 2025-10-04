@@ -127,13 +127,14 @@ class NASAGPMService:
                     lon_idx = int((lon + 180) / 0.1)
                     
                     # OPeNDAP subset query for precipitation data
-                    subset_url = f"{url}.nc4?precipitationCal[{lat_idx}:{lat_idx}:1][{lon_idx}:{lon_idx}:1]"
+                    # subset_url = f"{url}.nc4?precipitationCal[{lat_idx}:{lat_idx}:1][{lon_idx}:{lon_idx}:1]"
                     
-                    logger.info(f"Fetching climatology data from {year}: {subset_url}")
+                    logger.info(f"Fetching climatology data from {year}: {url}")
                     
-                    async with self.session.get(subset_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=100)) as response:
                         if response.status == 200:
                             data = await response.read()
+                            print(type(data))
                             # Parse the precipitation value from the data
                             precip_value = await self._extract_precipitation_value(data)
                             if precip_value is not None and precip_value >= 0:

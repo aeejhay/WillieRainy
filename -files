@@ -1,0 +1,37 @@
+[33mcommit 819ba1d5fa3acecf67e7ca658898e87d9624becc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/tusherDN[m[33m, [m[1;31morigin/mayo[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/ajmole[m[33m, [m[1;31morigin/Umer_ML[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: ajand <iam@adrianjandongan.me>
+Date:   Sat Oct 4 16:36:34 2025 +0100
+
+    Initial commit: Willie Rainy Nice Eyes project with FastAPI backend and React frontend
+
+.gitignore
+README.md
+backend/Dockerfile
+backend/app/__init__.py
+backend/app/main.py
+backend/app/models.py
+backend/app/nasa_service.py
+backend/app/services.py
+backend/env.example
+backend/install_dependencies.py
+backend/jobs/build_climo.py
+backend/jobs/build_seasonal.py
+backend/jobs/create_sample_data.py
+backend/jobs/fetch_imerg_final.py
+backend/requirements-basic.txt
+backend/requirements-minimal.txt
+backend/requirements-nasa.txt
+backend/requirements-simple.txt
+backend/requirements.txt
+backend/run_backend.bat
+backend/run_server.py
+backend/start_server.bat
+backend/start_server.ps1
+docker-compose.yml
+frontend/Dockerfile
+frontend/eslint.config.js
+frontend/index.html
+frontend/postcss.config.js
+frontend/tailwind.config.js
+frontend/vite.config.js
+setup.py

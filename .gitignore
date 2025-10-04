@@ -142,4 +142,4 @@ data/
 *.hdf5
 
 # Root level src directory (if leftover from template)
-src/
+/src/
