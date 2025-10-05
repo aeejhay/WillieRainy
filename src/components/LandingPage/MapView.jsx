@@ -35,8 +35,11 @@ function ClickHandler({ onMapClick }) {
 }
 
 const MapView = ({ latitude, longitude, onMapClick }) => {
-  const position = latitude && longitude 
-    ? [parseFloat(latitude), parseFloat(longitude)]
+  const parsedLat = parseFloat(latitude);
+  const parsedLng = parseFloat(longitude);
+  const hasValidCoordinates = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
+  const position = hasValidCoordinates
+    ? [parsedLat, parsedLng]
     : [28.7041, 77.1025]; // Default to Delhi
 
   return (
@@ -50,8 +53,8 @@ const MapView = ({ latitude, longitude, onMapClick }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        <Marker position={position} />
-        <MapUpdater position={position} />
+  {hasValidCoordinates && <Marker position={position} />}
+  <MapUpdater position={hasValidCoordinates ? position : null} />
         <ClickHandler onMapClick={onMapClick} />
         {onMapClick && (
           <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg text-sm text-gray-600 z-[1000]">

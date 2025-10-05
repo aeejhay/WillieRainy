@@ -1,10 +1,36 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, Sprout, Calendar, TrendingUp, Cloud, Droplets, Wind, X, Thermometer, Activity, Zap, AlertTriangle, BarChart3, Leaf, MoreHorizontal } from "lucide-react";
-import GlassSurface from './components/GlassSurface';
-import MapView from './components/LandingPage/MapView';
-import Crosshair from './components/Crosshair';
-import TiltedCard from './components/TiltedCard';
+import GlassSurface from "./components/GlassSurface";
+import MapView from "./components/LandingPage/MapView";
+import Crosshair from "./components/Crosshair";
+import TiltedCard from "./components/TiltedCard";
+
+const DEFAULT_PI_IP = "10.131.118.187";
+const PI_IP = import.meta.env?.VITE_PI_IP ?? DEFAULT_PI_IP;
+const PI_MATRIX_ENDPOINT = `http://${PI_IP}:5000/send_matrix`;
+
+const generateBinaryMatrix = (size = 32) =>
+  Array.from({ length: size }, () =>
+    Array.from({ length: size }, () => Math.random() < 0.5 ? 0 : 1)
+  );
+
+const postMatrixToPi = async (matrix, endpoint = PI_MATRIX_ENDPOINT) => {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(matrix),
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => response.statusText);
+    throw new Error(`Failed to send matrix: ${response.status} ${message}`);
+  }
+
+  return response;
+};
 
 const dashboardItems = [
   { id: 1, title: "Weather", icon: Cloud, content: "Detailed weather information and forecasts for your selected area.", color: "bg-gray-700", span: "col-span-1 row-span-1" },
@@ -17,7 +43,7 @@ const dashboardItems = [
   { id: 8, title: "Energy", icon: Zap, content: "Monitor energy consumption and solar power generation.", color: "bg-gray-600", span: "col-span-1 row-span-2" },
   { id: 9, title: "Alerts", icon: AlertTriangle, content: "Critical alerts and notifications for your farm.", color: "bg-slate-700", span: "col-span-1 row-span-1" },
   { id: 10, title: "Analytics", icon: BarChart3, content: "Detailed analytics and insights about your operations.", color: "bg-gray-800", span: "col-span-1 row-span-1" },
-  { id: 11, title: "Crops", icon: Leaf, content: "Crop health monitoring and growth tracking.", color: "bg-gray-700", span: "col-span-1 row-span-1" },
+  { id: 11, title: "Crops", icon: Leaf, content: "Crop health monitorin g and growth tracking.", color: "bg-gray-700", span: "col-span-1 row-span-1" },
 ];
 
 
@@ -46,6 +72,7 @@ export default function App() {
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false);
   const [showCropSuggestions, setShowCropSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSubmittingMatrix, setIsSubmittingMatrix] = useState(false);
 
   // Fetch area suggestions from OpenStreetMap
   useEffect(() => {
@@ -100,7 +127,15 @@ export default function App() {
     console.log("Searching:", { area: areaInput, crop: cropInput, date: dashboardDate });
   };
 
-  const handleLandingSearch = () => {
+  
+
+  const handleCloseDashboard = () => {
+    setShowDashboard(false);
+    setActiveItem(null);
+  };const handleLandingSearch = async () => {
+    if (isSubmittingMatrix) return;
+
+    setIsSubmittingMatrix(true);
     let locationData = {};
     
     switch (locationMethod) {
@@ -115,20 +150,51 @@ export default function App() {
         break;
     }
     
-    console.log("Form values:", { 
-      locationMethod, 
-      ...locationData, 
-      dateInput, 
-      cropType, 
-      area 
-    });
+    const matrix = generateBinaryMatrix();
     
-    setShowDashboard(true);
-  };
+    // Prepare the complete payload with farm data and matrix
+    const payload = {
+      matrix: matrix,
+      farmData: {
+        locationMethod,
+        ...locationData,
+        date: dateInput,
+        cropType,
+        farmName: area,
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+    console.log("Sending to Pi:", {
+      endpoint: PI_MATRIX_ENDPOINT,
+      farmData: payload.farmData,
+      matrixSize: `${matrix.length}x${matrix[0].length}`
+    });
 
-  const handleCloseDashboard = () => {
-    setShowDashboard(false);
-    setActiveItem(null);
+    try {
+      const response = await fetch(PI_MATRIX_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const message = await response.text().catch(() => response.statusText);
+        throw new Error(`Failed to send data: ${response.status} ${message}`);
+      }
+
+      const result = await response.json().catch(() => ({ status: "ok" }));
+      console.log("Successfully sent to Pi:", result);
+      
+    } catch (error) {
+      console.error("Failed to send data to Pi:", error);
+      alert(`Error: ${error.message}\n\nPlease check if the Pi is reachable at ${PI_IP}:5000`);
+    } finally {
+      setIsSubmittingMatrix(false);
+      setShowDashboard(true);
+    }
   };
 
   return (
@@ -158,7 +224,7 @@ export default function App() {
             </div>
 
             {/* Right Side - Location Selector and Form */}
-            <div className="flex flex-col items-center justify-center px-6 space-y-6">
+            <div className="flex flex-col items-center px-6 py-8 space-y-6 max-h-screen overflow-y-auto">
               {/* Location Method Dropdown */}
               <motion.div
                 initial={{ x: 50, opacity: 0 }}
@@ -179,7 +245,7 @@ export default function App() {
               </motion.div>
 
               {/* Form */}
-              <div className="w-full max-w-sm">
+              <div className="w-full max-w-sm space-y-5">
                 <motion.h1 
                   initial={{ y: -20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -197,7 +263,7 @@ export default function App() {
                   Enter your farm details to get started
                 </motion.p>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Location-specific inputs */}
                   {locationMethod === 'coordinates' && (
                     <>
@@ -211,8 +277,9 @@ export default function App() {
                           type="text"
                           value={longitude}
                           onChange={(e) => setLongitude(e.target.value)}
+                          onFocus={() => setLocationMethod('coordinates')}
                           placeholder="e.g., -122.4194"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         />
                       </motion.div>
 
@@ -226,8 +293,9 @@ export default function App() {
                           type="text"
                           value={latitude}
                           onChange={(e) => setLatitude(e.target.value)}
+                          onFocus={() => setLocationMethod('coordinates')}
                           placeholder="e.g., 37.7749"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         />
                       </motion.div>
                     </>
@@ -245,7 +313,7 @@ export default function App() {
                         value={placeName}
                         onChange={(e) => setPlaceName(e.target.value)}
                         placeholder="e.g., Green Valley, California"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </motion.div>
                   )}
@@ -255,16 +323,35 @@ export default function App() {
                       initial={{ x: 50, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ delay: 0.4 }}
-                      className="p-4 bg-blue-50 rounded-xl border border-blue-200"
+                      className="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3"
                     >
                       <div className="flex items-center gap-2 text-blue-700">
                         <MapPin className="w-5 h-5" />
                         <span className="font-semibold">Map Selection Mode</span>
                       </div>
-                      <p className="text-blue-600 text-sm mt-1">Click on the map to select your farm location</p>
-                      {longitude && latitude && (
-                        <div className="mt-2 text-sm text-blue-600">Selected: {latitude}, {longitude}</div>
-                      )}
+                      <p className="text-blue-600 text-sm">Click on the map to select your farm location</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-blue-700 mb-1 uppercase tracking-wide">Latitude</label>
+                          <input
+                            type="text"
+                            value={latitude}
+                            readOnly
+                            placeholder="Click the map to capture latitude"
+                            className="w-full px-3 py-2 rounded-lg border border-blue-200 bg-white/80 text-blue-900 text-sm focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-blue-700 mb-1 uppercase tracking-wide">Longitude</label>
+                          <input
+                            type="text"
+                            value={longitude}
+                            readOnly
+                            placeholder="Click the map to capture longitude"
+                            className="w-full px-3 py-2 rounded-lg border border-blue-200 bg-white/80 text-blue-900 text-sm focus:outline-none"
+                          />
+                        </div>
+                      </div>
                     </motion.div>
                   )}
 
@@ -280,7 +367,7 @@ export default function App() {
                       value={area}
                       onChange={(e) => setArea(e.target.value)}
                       placeholder="e.g., Green Valley Farm"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     />
                   </motion.div>
 
@@ -294,7 +381,7 @@ export default function App() {
                       type="date"
                       value={dateInput}
                       onChange={(e) => setDateInput(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     />
                   </motion.div>
 
@@ -309,7 +396,7 @@ export default function App() {
                       value={cropType}
                       onChange={(e) => setCropType(e.target.value)}
                       placeholder="e.g., Wheat"
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     />
                   </motion.div>
 
@@ -318,10 +405,15 @@ export default function App() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.9 }}
                     onClick={handleLandingSearch}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
+                    disabled={isSubmittingMatrix}
+                    className={`w-full text-white font-semibold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 ${
+                      isSubmittingMatrix
+                        ? "bg-blue-400 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600"
+                    }`}
                   >
-                    <Search className="w-5 h-5" />
-                    Analyze Farm
+                    <Search className={`w-5 h-5 ${isSubmittingMatrix ? "animate-spin" : ""}`} />
+                    {isSubmittingMatrix ? "Sending to Pi..." : "Analyze Farm"}
                   </motion.button>
                 </div>
               </div>
