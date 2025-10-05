@@ -245,12 +245,43 @@ export default function App() {
     console.log("Searching:", { area: areaInput, crop: cropInput, date: dashboardDate });
   };
 
+  const handleExportPdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+
+    try {
+      const rainChance = Math.floor(Math.random() * 60) + 20;
+      const avgTemp = Math.floor(Math.random() * 15) + 18;
+      const soilQuality = Math.floor(Math.random() * 40) + 60;
+      const survivalRate = Math.floor(Math.random() * 20) + 75;
+
+      const doc = buildDashboardPdf({
+        farmName: area,
+        cropType,
+        date: dashboardDate,
+        rainChance,
+        avgTemp,
+        soilQuality,
+        survivalRate,
+      });
+
+      doc.save(`${area || "farm"}-report.pdf`);
+    } catch (error) {
+      console.error("Failed to create PDF", error);
+      alert("Could not create PDF. See console for details.");
+    } finally {
+      setTimeout(() => setIsGeneratingPdf(false), 600);
+    }
+  };
+
   
 
   const handleCloseDashboard = () => {
     setShowDashboard(false);
     setActiveItem(null);
-  };const handleLandingSearch = async () => {
+  };
+  
+  const handleLandingSearch = async () => {
     if (isSubmittingMatrix) return;
 
     setIsSubmittingMatrix(true);
@@ -551,7 +582,7 @@ export default function App() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-                onClick={async () => {}}
+                onClick={handleExportPdf}
                 disabled={isGeneratingPdf}
                 className={`bg-indigo-500 text-white rounded-full px-4 py-2 shadow-xl hover:shadow-2xl transition-all flex items-center gap-2 text-sm font-semibold ${
                   isGeneratingPdf ? "cursor-wait bg-indigo-400" : "hover:bg-indigo-600"
